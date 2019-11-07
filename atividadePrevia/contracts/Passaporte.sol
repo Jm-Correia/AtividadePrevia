@@ -1,9 +1,7 @@
 pragma solidity >=0.4.21 <0.6.0;
-
 contract Passaporte {
     
     enum PAISES {BRAZIL, EUA, CANADA, ARGENTINA, CHILE, CHINA, AUSTRALIA}
-    
     enum TIPOCARIMBO {ENTRADA, SAIDA}
     
     struct Carimbo {
@@ -34,13 +32,10 @@ contract Passaporte {
     }
     
     function emitirPrimeiroPassaporte(string memory Name, string  memory lastName, PAISES pais) public payable returns(bytes32){
-         require(msg.value == 2 ether, "Valor Insuficiente para emitir o passaporte!!!");
-
-        if(verificarDoc()){
-            revert("Você já possui passaporte, caso esteja vencido por favor renove seu Passaporte!!!");
-        }
-
-         pagamentos = msg.value;
+        require(msg.value == 2 ether, "Valor Insuficiente para emitir o passaporte!!!");
+        require(verificarDoc(),"Você já possui passaporte, caso esteja vencido por favor renove seu Passaporte!!!");
+        
+         pagamentos += msg.value;
          
          Documento_Pass storage doc = documentos[msg.sender];
          doc.dtEmissao = block.timestamp;
@@ -55,28 +50,30 @@ contract Passaporte {
          return keccak256(abi.encodePacked(block.timestamp, msg.sender, pais, Name, lastName));
     }
     
-    function solicitarEntradaPais(uint pais) public payable returns(bytes32){
+    function solicitarEntradaPais(uint pais) public payable returns(bool){
         require(msg.value == 100000 wei, "Valor Insuficiente para entrada neste País!!!");
-        //verificardoc
-        pagamentos = msg.value;
+        pagamentos += msg.value;
         
-        carimbarFolha(msg.sender, pais, TIPOCARIMBO.ENTRADA);
+        carimbarFolha(msg.sender, PAISES(pais), TIPOCARIMBO.ENTRADA);
         
-        return keccak256(abi.encodePacked(block.timestamp, msg.sender, pais));
+        return true;
     }
     
-    function solicitarSaidaPais() public returns(bytes32){
+    function solicitarSaidaPais() public returns(bool){
         Documento_Pass storage doc = documentos[msg.sender];
         
-        PAISES p = doc.carimbos[doc.carimbos.length-1].pais;
-        carimbarFolha(msg.sender, p,TIPOCARIMBO.SAIDA);
+        //PAISES p = doc.carimbos[doc.carimbos.length-1].sigla;
+        PAISES p = doc.carimbos[doc.carimbos.length-1].sigla;
+      
         
-        return keccak256(abi.encodePacked(block.timestamp, msg.sender, p, TIPOCARIMBO.SAIDA));
+        carimbarFolha(msg.sender, p, TIPOCARIMBO.SAIDA);
+        
+        return true;
     }
     
     
-    function carimbarFolha(address viajante, uint pais, TIPOCARIMBO tipo) internal{
-        documentos[viajante].carimbos.push(Carimbo(block.timestamp, PAISES(pais), tipo));
+    function carimbarFolha(address viajante, PAISES pais, TIPOCARIMBO tipo) internal{
+        documentos[viajante].carimbos.push(Carimbo(block.timestamp, pais, tipo));
     }
     
     function sacarFunds () public {
@@ -94,11 +91,12 @@ contract Passaporte {
         return false;
     } 
     
-    function exibirCarimbos(uint pais) public view returns(uint, PAISES) {
+    function exibirCarimbos(uint a) public view returns(uint, PAISES) {
             
         require(documentos[msg.sender].carimbos.length != 0, "Vc ainda não possui carimbos!!!!");
         Documento_Pass storage doc = documentos[msg.sender];
-        return (doc.carimbos[pais].dtCarimbo, doc.carimbos[pais].sigla);
+        return (doc.carimbos[a].dtCarimbo, doc.carimbos[a].sigla);
     }
 
 }
+
