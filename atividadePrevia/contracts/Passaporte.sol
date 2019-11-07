@@ -32,7 +32,7 @@ contract Passaporte {
     }
     
     function emitirPrimeiroPassaporte(string memory Name, string  memory lastName, PAISES pais) public payable returns(bytes32){
-        require(msg.value == 2 ether, "Valor Insuficiente para emitir o passaporte!!!");
+        require(msg.value == 0.1 ether, "Valor Insuficiente para emitir o passaporte!!!");
         require(verificarDoc(),"Você já possui passaporte, caso esteja vencido por favor renove seu Passaporte!!!");
         
          pagamentos += msg.value;
